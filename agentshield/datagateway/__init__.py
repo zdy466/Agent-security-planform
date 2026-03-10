@@ -1,0 +1,1 @@
+"""Datagateway module initialization"""
