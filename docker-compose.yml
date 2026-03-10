@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  agentshield:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: agentshield:latest
+    container_name: agentshield
+    ports:
+      - "8000:8000"
+      - "9090:9090"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///agentshield.db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - SECRET_KEY=${SECRET_KEY:-changeme}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - agentshield-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentshield-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - agentshield-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: agentshield-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - agentshield
+    networks:
+      - agentshield-network
+
+volumes:
+  redis-data:
+
+networks:
+  agentshield-network:
+    driver: bridge
