@@ -403,3 +403,297 @@ logging.basicConfig(level=logging.DEBUG)
 - [API 参考](api-reference.md)
 - [部署指南](deployment.md)
 - [GitHub Issues](https://github.com/zdy466/Agent-security-planform/issues)
+
+## v0.8.0 新增模块配置
+
+### 数据加密配置
+
+```python
+from agentshield.security import (
+    DataEncryptor,
+    FieldLevelEncryption,
+    EncryptionAlgorithm
+)
+
+# 基础加密配置
+encryptor = DataEncryptor({
+    "algorithm": EncryptionAlgorithm.FERNET,
+    "key_rotation_days": 30,
+    "master_key_path": "/secure/keys/master.key"
+})
+
+# 字段级加密配置
+fle = FieldLevelEncryption({
+    "encryption_key": "your-32-byte-base64-key",
+    "encrypted_fields": ["ssn", "credit_card", "password"],
+    "algorithm": EncryptionAlgorithm.AES256
+})
+```
+
+### IP 限流配置
+
+```python
+from agentshield.security import (
+    RateLimiter,
+    DistributedRateLimiter,
+    RateLimitAction,
+    RateLimitAlgorithm
+)
+
+# 本地限流
+limiter = RateLimiter({
+    "default_rate": 100,
+    "window_seconds": 60,
+    "algorithm": RateLimitAlgorithm.SLIDING_WINDOW,
+    "storage": "memory"
+})
+
+# 添加自定义规则
+limiter.add_rule(
+    path="/api/login",
+    rate=10,
+    window=60,
+    action=RateLimitAction.BLOCK
+)
+
+# 分布式限流 (Redis)
+dist_limiter = DistributedRateLimiter({
+    "redis_url": "redis://localhost:6379/0",
+    "default_rate": 1000,
+    "window_seconds": 60,
+    "key_prefix": "ratelimit:"
+})
+```
+
+### WAF 配置
+
+```python
+from agentshield.security import (
+    WebApplicationFirewall,
+    ThreatLevel,
+    WAFAction
+)
+
+waf = WebApplicationFirewall({
+    "mode": "blocking",
+    "threat_threshold": 5,
+    "rules": [
+        {
+            "id": "sql-injection",
+            "pattern": r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION)\b)",
+            "action": WAFAction.BLOCK,
+            "threat_level": ThreatLevel.HIGH
+        },
+        {
+            "id": "xss-pattern",
+            "pattern": r"(<script|javascript:|onerror=)",
+            "action": WAFAction.BLOCK,
+            "threat_level": ThreatLevel.HIGH
+        }
+    ]
+})
+```
+
+### 密钥轮换配置
+
+```python
+from agentshield.security import (
+    KeyRotationManager,
+    KeyType
+)
+
+manager = KeyRotationManager({
+    "storage_path": "/secure/keys",
+    "auto_rotate": True,
+    "rotation_days": 90,
+    "notify_before_days": 7,
+    "key_store_type": "vault"
+})
+
+# 添加密钥
+manager.add_key(
+    key_type=KeyType.API_KEY,
+    key_value="sk-xxx",
+    provider="openai",
+    expires_days=90
+)
+```
+
+### LLM 网关配置
+
+```python
+from agentshield.security import (
+    LLMGateway,
+    LLMProviderFactory,
+    ProviderType,
+    LoadBalancingStrategy
+)
+
+gateway = LLMGateway({
+    "providers": [
+        {
+            "type": ProviderType.OPENAI,
+            "api_key": "sk-xxx",
+            "weight": 1,
+            "max_retries": 3
+        },
+        {
+            "type": ProviderType.ANTHROPIC,
+            "api_key": "sk-ant-xxx",
+            "weight": 2,
+            "max_retries": 3
+        }
+    ],
+    "strategy": LoadBalancingStrategy.ROUND_ROBIN,
+    "enable_cache": True,
+    "cache_ttl": 3600,
+    "fallback_enabled": True
+})
+```
+
+### SIEM 集成配置
+
+```python
+from agentshield.security import (
+    SIEMIntegrator,
+    SIEMProvider
+)
+
+# Splunk 配置
+splunk = SIEMIntegrator({
+    "provider": SIEMProvider.SPLUNK,
+    "hec_url": "https://splunk.example.com:8088",
+    "hec_token": "your-token",
+    "batch_size": 100,
+    "format": "json"
+})
+
+# Elasticsearch 配置
+es = SIEMIntegrator({
+    "provider": SIEMProvider.ELASTICSEARCH,
+    "hosts": ["http://localhost:9200"],
+    "index": "agentshield-logs",
+    "batch_size": 50
+})
+```
+
+### 告警升级配置
+
+```python
+from agentshield.security import (
+    AlertEscalator,
+    EmailNotifier,
+    SlackNotifier,
+    PagerDutyNotifier,
+    AlertSeverity
+)
+
+escalator = AlertEscalator({
+    "enabled": True,
+    "escalation_timeout_minutes": 30,
+    "max_escalations": 5
+})
+
+# Email 通知
+escalator.add_channel(EmailNotifier({
+    "smtp_host": "smtp.example.com",
+    "smtp_port": 587,
+    "from": "alerts@company.com",
+    "to": ["security@company.com"],
+    "use_tls": True
+}))
+
+# Slack 通知
+escalator.add_channel(SlackNotifier({
+    "webhook_url": "https://hooks.slack.com/services/xxx",
+    "channel": "#security-alerts",
+    "username": "AgentShield"
+}))
+
+# PagerDuty 通知
+escalator.add_channel(PagerDutyNotifier({
+    "integration_key": "xxx",
+    "severity_map": {
+        AlertSeverity.HIGH: "trigger",
+        AlertSeverity.CRITICAL: "trigger"
+    }
+}))
+```
+
+### 安全评分配置
+
+```python
+from agentshield.security import (
+    SecurityScorer,
+    ScoreCategory
+)
+
+scorer = SecurityScorer({
+    "enabled": True,
+    "weights": {
+        ScoreCategory.ENCRYPTION: 25,
+        ScoreCategory.AUTHENTICATION: 25,
+        ScoreCategory.ACCESS_CONTROL: 25,
+        ScoreCategory.AUDITING: 25
+    },
+    "thresholds": {
+        "A": 90,
+        "B": 80,
+        "C": 70,
+        "D": 60
+    }
+})
+```
+
+### 配置模板
+
+```python
+from agentshield.security import TemplateManager, TemplateCategory
+
+manager = TemplateManager()
+
+# 获取企业级模板
+template = manager.get_template(TemplateCategory.ENTERPRISE)
+config = template.apply({
+    "organization": "My Company",
+    "env": "production"
+})
+
+# 验证配置
+is_valid, errors = manager.validate_config(config)
+```
+
+### 策略即代码
+
+```python
+from agentshield.security import (
+    PolicyEngine,
+    PolicyBundle,
+    PolicyRule,
+    PolicyEffect
+)
+
+engine = PolicyEngine({
+    "default_action": "deny",
+    "enable_audit": True
+})
+
+# 创建策略包
+bundle = PolicyBundle(
+    bundle_id="security-policies",
+    name="Security Policies",
+    version="1.0"
+)
+
+# 添加规则
+rule = PolicyRule(
+    rule_id="allow-admin",
+    name="Allow Admin Access",
+    effect=PolicyEffect.ALLOW,
+    resources=["*"],
+    actions=["*"],
+    conditions={"role": "admin"}
+)
+bundle.add_rule(rule)
+engine.add_bundle(bundle)
+```

@@ -342,3 +342,248 @@ docker-compose exec db pg_dump -U agentshield > backup.sql
 export LOG_LEVEL=DEBUG
 python -m agentshield
 ```
+
+---
+
+## v0.8.0 新增模块部署
+
+### Redis 分布式限流部署
+
+```yaml
+# docker-compose.yml
+redis:
+  image: redis:7-alpine
+  ports:
+    - "6379:6379"
+  volumes:
+    - redis_data:/data
+
+services:
+  agentshield:
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+```
+
+### SIEM 集成部署
+
+```yaml
+# ELK Stack 部署
+elasticsearch:
+  image: elasticsearch:8.11.0
+  environment:
+    - discovery.type=single-node
+    - xpack.security.enabled=true
+  ports:
+    - "9200:9200"
+
+logstash:
+  image: logstash:8.11.0
+  ports:
+    - "5044:5044"
+
+kibana:
+  image: kibana:8.11.0
+  ports:
+    - "5601:5601"
+```
+
+### 云服务部署配置
+
+#### AWS 部署
+
+```yaml
+# 生产环境配置
+agentshield:
+  environment:
+    - AWS_REGION=us-east-1
+    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - DYNAMODB_TABLE=agentshield_config
+    - S3_BUCKET=agentshield-data
+```
+
+#### Azure 部署
+
+```yaml
+agentshield:
+  environment:
+    - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+    - AZURE_COSMOSDB_ENDPOINT=${AZURE_COSMOSDB_ENDPOINT}
+    - AZURE_COSMOSDB_KEY=${AZURE_COSMOSDB_KEY}
+```
+
+#### GCP 部署
+
+```yaml
+agentshield:
+  environment:
+    - GCP_PROJECT=${GCP_PROJECT}
+    - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+```
+
+### 高可用部署
+
+```yaml
+# docker-compose-ha.yml
+version: '3.8'
+
+services:
+  agentshield:
+    image: agentshield:latest
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    image: postgres:14
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  redis_data:
+  pgdata:
+```
+
+### Kubernetes 高可用部署
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: agentshield
+spec:
+  serviceName: agentshield
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agentshield
+  template:
+    metadata:
+      labels:
+        app: agentshield
+    spec:
+      containers:
+      - name: agentshield
+        image: agentshield:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: agentshield-config
+              key: redis_url
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: agentshield-secrets
+              key: database_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentshield
+spec:
+  selector:
+    app: agentshield
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: ClusterIP
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentshield-lb
+spec:
+  selector:
+    app: agentshield
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: LoadBalancer
+```
+
+### 监控和告警部署
+
+```yaml
+# prometheus-config.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'agentshield'
+    static_configs:
+      - targets: ['agentshield:8000']
+```
+
+```yaml
+# alertmanager-config.yml
+route:
+  receiver: 'slack-notifications'
+  group_by: ['alertname']
+
+receivers:
+  - name: 'slack-notifications'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/xxx'
+        channel: '#alerts'
+```
+
+### 性能调优建议
+
+| 参数 | 小型部署 | 中型部署 | 大型部署 |
+|------|----------|----------|----------|
+| Worker 进程 | 2 | 4 | 8 |
+| 连接池大小 | 10 | 50 | 100 |
+| 缓存大小 | 256MB | 512MB | 1GB |
+| Redis 连接数 | 10 | 50 | 200 |
+
+### 安全加固建议
+
+```yaml
+# 使用网络安全策略
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agentshield-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: agentshield
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+```

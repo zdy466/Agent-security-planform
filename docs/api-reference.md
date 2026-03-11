@@ -376,6 +376,582 @@ from agentshield import AttackSimulator, SecurityTestSuite, AttackType
 
 ---
 
+## 新增安全模块 (v0.8.0)
+
+### 数据加密模块
+
+#### DataEncryptor
+
+```python
+from agentshield.security import DataEncryptor, EncryptionAlgorithm
+```
+
+**构造函数:**
+```python
+DataEncryptor(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "algorithm": EncryptionAlgorithm.FERNET,  # FERNET, AES256
+    "key_rotation_days": 30,
+    "master_key_path": "/secure/keys/master.key"
+}
+```
+
+**方法:**
+
+| 方法 | 说明 | 返回类型 |
+|------|------|----------|
+| `encrypt(data)` | 加密数据 | Dict[str, Any] |
+| `decrypt(encrypted_data)` | 解密数据 | Dict[str, Any] |
+| `encrypt_field(field_name, value)` | 加密字段 | str |
+| `decrypt_field(field_name, value)` | 解密字段 | Any |
+| `rotate_keys()` | 轮换密钥 | None |
+
+#### FieldLevelEncryption
+
+```python
+from agentshield.security import FieldLevelEncryption
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `encrypt_record(record)` | 加密记录 |
+| `decrypt_record(encrypted_record)` | 解密记录 |
+| `encrypt_field(field_name, value)` | 加密单个字段 |
+| `decrypt_field(field_name, value)` | 解密单个字段 |
+
+### 限流模块
+
+#### RateLimiter
+
+```python
+from agentshield.security import RateLimiter, RateLimitAction, RateLimitAlgorithm
+```
+
+**构造函数:**
+```python
+RateLimiter(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "default_rate": 100,
+    "window_seconds": 60,
+    "algorithm": "sliding_window",  # sliding_window, token_bucket
+    "storage": "memory"  # memory, redis
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `check_rate_limit(client_id)` | 检查限流 |
+| `add_rule(path, rate, window, action)` | 添加规则 |
+| `remove_rule(path)` | 删除规则 |
+| `get_remaining(client_id)` | 获取剩余请求数 |
+| `reset_client(client_id)` | 重置客户端 |
+
+#### DistributedRateLimiter
+
+```python
+from agentshield.security import DistributedRateLimiter
+```
+
+**配置项:**
+```python
+{
+    "redis_url": "redis://localhost:6379/0",
+    "default_rate": 1000,
+    "window_seconds": 60
+}
+```
+
+### WAF 模块
+
+#### WebApplicationFirewall
+
+```python
+from agentshield.security import WebApplicationFirewall, ThreatLevel, AttackType
+```
+
+**构造函数:**
+```python
+WebApplicationFirewall(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "mode": "blocking",  # monitoring, blocking
+    "threat_threshold": 5,
+    "rules": [...],
+    "custom_patterns": [...]
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `check_request(request)` | 检查请求 |
+| `add_rule(rule)` | 添加规则 |
+| `remove_rule(rule_id)` | 删除规则 |
+| `get_threat_level()` | 获取威胁级别 |
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `ThreatLevel` | SAFE, LOW, MEDIUM, HIGH, CRITICAL |
+| `AttackType` | SQL_INJECTION, XSS, COMMAND_INJECTION, PATH_TRAVERSAL |
+| `WAFAction` | ALLOW, BLOCK, LOG_ONLY |
+
+### 密钥轮换模块
+
+#### KeyRotationManager
+
+```python
+from agentshield.security import KeyRotationManager, KeyType, KeyStatus
+```
+
+**构造函数:**
+```python
+KeyRotationManager(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "storage_path": "/secure/keys",
+    "auto_rotate": True,
+    "rotation_days": 90,
+    "notify_before_days": 7
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `add_key(key_type, key_value, provider, expires_days)` | 添加密钥 |
+| `rotate_key(key_id)` | 轮换密钥 |
+| `get_key(key_id)` | 获取密钥 |
+| `list_keys(provider)` | 列出密钥 |
+| `revoke_key(key_id)` | 撤销密钥 |
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `KeyType` | API_KEY, SECRET_KEY, ENCRYPTION_KEY |
+| `KeyStatus` | ACTIVE, EXPIRED, ROTATING, REVOKED |
+
+### LLM 模块
+
+#### BaseLLMProvider
+
+```python
+from agentshield.security import BaseLLMProvider, ProviderType
+```
+
+#### LLMProviderFactory
+
+```python
+from agentshield.security import LLMProviderFactory, ProviderType
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `create_provider(provider_type, config)` | 创建提供商 |
+| `list_providers()` | 列出可用提供商 |
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `ProviderType` | OPENAI, ANTHROPIC, AZURE_OPENAI, GOOGLE_VERTEX, LOCAL |
+
+#### LLMGateway
+
+```python
+from agentshield.security import LLMGateway, LoadBalancingStrategy
+```
+
+**构造函数:**
+```python
+LLMGateway(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "providers": [...],
+    "strategy": LoadBalancingStrategy.ROUND_ROBIN,
+    "enable_cache": True,
+    "cache_ttl": 3600,
+    "fallback_enabled": True
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `chat(messages)` | 发送聊天请求 |
+| `complete(prompt)` | 补全文本 |
+| `add_provider(provider)` | 添加提供商 |
+| `remove_provider(provider_id)` | 移除提供商 |
+| `get_metrics()` | 获取指标 |
+
+### SIEM 模块
+
+#### SIEMIntegrator
+
+```python
+from agentshield.security import SIEMIntegrator, SIEMProvider
+```
+
+**构造函数:**
+```python
+SIEMIntegrator(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "provider": SIEMProvider.SPLUNK,  # SPLUNK, ELASTICSEARCH
+    "hec_url": "https://splunk:8088",
+    "hec_token": "token",
+    "batch_size": 100,
+    "format": "json"  # json, cef
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `send_log(event)` | 发送日志 |
+| `send_batch(events)` | 批量发送 |
+| `query_logs(query)` | 查询日志 |
+
+#### SplunkClient
+
+```python
+from agentshield.security import SplunkClient
+```
+
+#### ElasticsearchClient
+
+```python
+from agentshield.security import ElasticsearchClient
+```
+
+### 告警模块
+
+#### AlertEscalator
+
+```python
+from agentshield.security import AlertEscalator, AlertSeverity, AlertStatus
+```
+
+**构造函数:**
+```python
+AlertEscalator(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "enabled": True,
+    "escalation_timeout_minutes": 30,
+    "max_escalations": 5
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `create_alert(title, description, severity, source)` | 创建告警 |
+| `escalate(alert)` | 升级告警 |
+| `add_channel(notifier)` | 添加通知渠道 |
+| `resolve(alert_id)` | 解决告警 |
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `AlertSeverity` | LOW, MEDIUM, HIGH, CRITICAL |
+| `AlertStatus` | OPEN, IN_PROGRESS, ESCALATED, RESOLVED |
+| `NotificationChannel` | EMAIL, SLACK, PAGERDUTY, WEBHOOK |
+
+#### EmailNotifier
+
+```python
+from agentshield.security import EmailNotifier
+```
+
+**配置项:**
+```python
+{
+    "smtp_host": "smtp.example.com",
+    "smtp_port": 587,
+    "from": "alerts@company.com",
+    "to": ["security@company.com"],
+    "use_tls": True
+}
+```
+
+#### SlackNotifier
+
+```python
+from agentshield.security import SlackNotifier
+```
+
+**配置项:**
+```python
+{
+    "webhook_url": "https://hooks.slack.com/xxx",
+    "channel": "#security-alerts",
+    "username": "AgentShield"
+}
+```
+
+### 安全评分模块
+
+#### SecurityScorer
+
+```python
+from agentshield.security import SecurityScorer, ScoreCategory, RiskLevel
+```
+
+**构造函数:**
+```python
+SecurityScorer(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "enabled": True,
+    "weights": {...},
+    "thresholds": {...}
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `assess(security_state)` | 评估安全状态 |
+| `get_grade()` | 获取评级 |
+| `get_score()` | 获取分数 |
+| `get_risk_level()` | 获取风险级别 |
+| `get_recommendations()` | 获取建议 |
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `ScoreCategory` | ENCRYPTION, AUTHENTICATION, ACCESS_CONTROL, AUDITING |
+| `RiskLevel` | LOW, MEDIUM, HIGH, CRITICAL |
+
+### 配置模板模块
+
+#### TemplateManager
+
+```python
+from agentshield.security import TemplateManager, TemplateCategory
+```
+
+**构造函数:**
+```python
+TemplateManager(config: Optional[Dict[str, Any]] = None)
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `get_template(category)` | 获取模板 |
+| `list_templates()` | 列出模板 |
+| `apply(template, variables)` | 应用模板 |
+| `validate_config(config)` | 验证配置 |
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `TemplateCategory` | BASIC, ADVANCED, ENTERPRISE, DEV, PROD, SOC2, GDPR, ISO27001 |
+
+### 策略即代码模块
+
+#### PolicyEngine (security)
+
+```python
+from agentshield.security import PolicyEngine, PolicyBundle, PolicyRule
+```
+
+**构造函数:**
+```python
+PolicyEngine(config: Optional[Dict[str, Any]] = None)
+```
+
+**配置项:**
+```python
+{
+    "default_action": "deny",
+    "enable_audit": True
+}
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `add_bundle(bundle)` | 添加策略包 |
+| `remove_bundle(bundle_id)` | 移除策略包 |
+| `evaluate(context)` | 评估策略 |
+| `validate_policy(policy)` | 验证策略 |
+
+#### PolicyBundle
+
+```python
+from agentshield.security import PolicyBundle
+```
+
+#### PolicyRule
+
+```python
+from agentshield.security import PolicyRule, PolicyEffect
+```
+
+**枚举:**
+
+| 枚举 | 值 |
+|------|-----|
+| `PolicyEffect` | ALLOW, DENY |
+| `PolicyResource` | * (通配符) |
+
+---
+
+## ML 模块
+
+### AnomalyDetector
+
+```python
+from agentshield.ml import AnomalyDetector
+
+detector = AnomalyDetector({
+    "sensitivity": 0.8,
+    "model_type": "isolation_forest"
+})
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `detect(data)` | 检测异常 |
+| `train(data)` | 训练模型 |
+| `get_score(data)` | 获取异常分数 |
+
+### RiskScorer
+
+```python
+from agentshield.ml import RiskScorer
+
+scorer = RiskScorer({
+    "model_path": "models/risk_model.pkl"
+})
+```
+
+**方法:**
+
+| 方法 | 说明 |
+|------|------|
+| `score(context)` | 评分 |
+| `get_level(score)` | 获取级别 |
+| `get_factors()` | 获取风险因素 |
+
+### BehaviorAnalyzer
+
+```python
+from agentshield.ml import BehaviorAnalyzer
+```
+
+---
+
+## 集成模块
+
+### Cloud Integrations
+
+#### AWS
+
+```python
+from agentshield.integrations.cloud.aws import (
+    S3Client, DynamoDBClient, LambdaClient, CloudWatchClient
+)
+```
+
+#### Azure
+
+```python
+from agentshield.integrations.cloud.azure import (
+    BlobClient, CosmosDBClient, FunctionsClient
+)
+```
+
+#### GCP
+
+```python
+from agentshield.integrations.cloud.gcp import (
+    GCSClient, BigQueryClient, CloudFunctionsClient
+)
+```
+
+#### Aliyun
+
+```python
+from agentshield.integrations.cloud.aliyun import (
+    OSSClient, FCClient, TableStoreClient
+)
+```
+
+---
+
+## 企业级模块
+
+### AuthenticationService
+
+```python
+from agentshield.enterprise import AuthenticationService, UserRole
+```
+
+### RBACEngine
+
+```python
+from agentshield.enterprise import RBACEngine, Resource, Action
+```
+
+### AdminAPIHandler
+
+```python
+from agentshield.enterprise import AdminAPIHandler
+```
+
+---
+
 ## 枚举类
 
 ### 数据类型
@@ -384,17 +960,20 @@ from agentshield import AttackSimulator, SecurityTestSuite, AttackType
 |------|-----|
 | `DataSensitivity` | LOW, MEDIUM, HIGH, CRITICAL |
 | `TrustLevel` | SYSTEM, INTERNAL, AGENT, USER, EXTERNAL |
-| `ThreatLevel` | LOW, MEDIUM, HIGH, CRITICAL |
-| `AttackType` | PROMPT_INJECTION, DATA_LEAKAGE, TOOL_ABUSE, KEY_EXTRACTION |
+| `ThreatLevel` | SAFE, LOW, MEDIUM, HIGH, CRITICAL |
+| `AttackType` | SQL_INJECTION, XSS, COMMAND_INJECTION, PATH_TRAVERSAL |
 | `ComplianceFramework` | GDPR, HIPAA, SOC2, ISO27001, PCI_DSS |
-| `GovernanceDomain` | SECURITY, PRIVACY, FAIRENCY |
+| `GovernanceDomain` | SECURITY, PRIVACY, FAIRNESS |
 
 ---
 
-## 异常NESS, TRANSPAR
+## 异常
 
 | 异常 | 说明 |
 |------|------|
 | `PermissionError` | 权限不足 |
 | `ValueError` | 值错误 |
 | `RuntimeError` | 运行时错误 |
+| `EncryptionError` | 加密错误 |
+| `RateLimitExceededError` | 超过限流 |
+| `KeyRotationError` | 密钥轮换错误 |
