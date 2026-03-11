@@ -18,6 +18,9 @@
             --accent: #06b6d4;
             --light: #f8fafc;
             --gray: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
         }
         
         body {
@@ -39,6 +42,7 @@
             width: 100%;
             top: 0;
             z-index: 1000;
+               
         }
         
         nav {
@@ -86,14 +90,25 @@
             margin-bottom: 1.5rem;
             background: linear-gradient(135deg, #60a5fa, var(--accent));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
         .hero p {
             font-size: 1.25rem;
             color: #94a3b8;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto 2rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
         }
         
         .btn {
@@ -126,39 +141,51 @@
             color: var(--secondary);
         }
         
-        .features {
+        .section {
             padding: 5rem 0;
+        }
+        
+        .section-light {
             background: var(--light);
         }
         
-        .features h2 {
+        .section h2 {
             text-align: center;
             font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .section .subtitle {
+            text-align: center;
+            color: var(--gray);
             margin-bottom: 3rem;
+            font-size: 1.1rem;
         }
         
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1rem));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
         }
         
         .feature-card {
             background: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #e2e8f0;
         }
         
         .feature-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         
         .feature-icon {
-            width: 50px;
-            height: 50px;
-            background: #dbeafe;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #dbeafe, #e0e7ff);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -169,12 +196,26 @@
         
         .feature-card h3 {
             margin-bottom: 0.5rem;
+            font-size: 1.1rem;
         }
         
         .feature-card p {
             color: var(--gray);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
         }
+        
+        .feature-card .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        
+        .tag-security { background: #fee2e2; color: #dc2626; }
+        .tag-ai { background: #dbeafe; color: #2563eb; }
+        .tag-monitor { background: #d1fae5; color: #059669; }
+        .tag-config { background: #fef3c7; color: #d97706; }
         
         .stats {
             background: var(--secondary);
@@ -197,6 +238,8 @@
         .cta {
             padding: 5rem 0;
             text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            color: white;
         }
         
         .cta h2 {
@@ -205,8 +248,42 @@
         }
         
         .cta p {
-            color: var(--gray);
+            opacity: 0.9;
             margin-bottom: 2rem;
+        }
+        
+        .cta .btn {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .cta .btn:hover {
+            background: var(--light);
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: left;
+            max-width: 700px;
+            margin: 0 auto;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .code-block .comment {
+            color: #64748b;
+        }
+        
+        .code-block .keyword {
+            color: #c084fc;
+        }
+        
+        .code-block .string {
+            color: #86efac;
         }
         
         footer {
@@ -221,6 +298,17 @@
             text-decoration: none;
         }
         
+        footer a:hover {
+            color: var(--accent);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+        
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2rem;
@@ -232,6 +320,10 @@
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -245,9 +337,10 @@
                 </div>
                 <ul class="nav-links">
                     <li><a href="#features">功能</a></li>
+                    <li><a href="#security">安全增强</a></li>
+                    <li><a href="#ai">AI/LLM</a></li>
+                    <li><a href="#monitor">监控运维</a></li>
                     <li><a href="#docs">文档</a></li>
-                    <li><a href="#github">GitHub</a></li>
-                    <li><a href="#contact">联系我们</a></li>
                 </ul>
             </nav>
         </div>
@@ -255,8 +348,9 @@
     
     <section class="hero">
         <div class="container">
+            <span class="badge">🚀 最新版本 v0.8.0</span>
             <h1>企业级 AI Agent 安全平台</h1>
-            <p>为 AI Agent 提供全面的安全保护，防止数据泄露、恶意攻击和合规风险</p>
+            <p>为 AI Agent 提供全面的安全保护，防止数据泄露、恶意攻击和合规风险。支持数据加密、IP限流、WAF、密钥轮换、多LLM提供商等企业级安全功能。</p>
             <div>
                 <a href="https://github.com/zdy466/Agent-security-planform" class="btn btn-primary">开始使用</a>
                 <a href="#features" class="btn btn-outline">了解更多</a>
@@ -264,54 +358,148 @@
         </div>
     </section>
     
-    <section class="features" id="features">
+    <section class="section section-light" id="features">
         <div class="container">
-            <h2>核心功能</h2>
+            <h2>🛡️ 核心安全模块</h2>
+            <p class="subtitle">保护 AI Agent 的第一道防线</p>
             <div class="feature-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🔥</div>
-                    <h3>数据防火墙</h3>
+                    <h3>LLM Data Firewall</h3>
                     <p>智能识别并阻止敏感数据泄露，支持邮箱、电话、身份证、银行卡等 30+ 检测模式</p>
+                    <span class="tag tag-security">数据安全</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
-                    <h3>Prompt 防护</h3>
+                    <h3>Prompt Injection Firewall</h3>
                     <p>实时检测并拦截恶意指令注入攻击，保护 AI 模型免受 Prompt Injection 攻击</p>
+                    <span class="tag tag-security">防护</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🔧</div>
-                    <h3>工具守护</h3>
-                    <p>工具白名单、参数验证、沙盒执行，全面管控 AI Agent 的工具调用</p>
+                    <h3>Tool Guard</h3>
+                    <p>工具白名单、参数验证，沙盒执行，全面管控 AI Agent 的工具调用</p>
+                    <span class="tag tag-security">访问控制</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
-                    <h3>行为监控</h3>
+                    <h3>Behavior Monitor</h3>
                     <p>AI 行为分析，异常检测，及时发现并阻止可疑操作</p>
+                    <span class="tag tag-monitor">监控</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📋</div>
-                    <h3>合规管理</h3>
+                    <h3>Compliance Manager</h3>
                     <p>内置 GDPR、HIPAA、SOC2 合规规则，自动生成合规报告</p>
+                    <span class="tag tag-config">合规</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
-                    <h3>攻击模拟</h3>
+                    <h3>Attack Simulation</h3>
                     <p>定期模拟各种攻击，验证安全防护能力，持续优化安全策略</p>
+                    <span class="tag tag-security">渗透测试</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="section" id="security">
+        <div class="container">
+            <h2>🔒 安全增强 (v0.8.0 新增)</h2>
+            <p class="subtitle">企业级数据安全保护</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>数据加密模块</h3>
+                    <p>敏感数据静态加密，支持 Fernet/AES256 算法，字段级加密，自动密钥轮换</p>
+                    <span class="tag tag-security">⭐⭐⭐⭐⭐</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚧</div>
+                    <h3>IP限流防DDoS</h3>
+                    <p>滑动窗口限流算法，IP白/黑名单，支持 Redis 分布式限流</p>
+                    <span class="tag tag-security">⭐⭐⭐⭐</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Web应用防火墙(WAF)</h3>
+                    <p>SQL注入、XSS、命令注入等攻击检测，支持规则自定义，威胁级别评估</p>
+                    <span class="tag tag-security">⭐⭐⭐⭐</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔑</div>
+                    <h3>密钥轮换</h3>
+                    <p>自动 API 密钥轮换，支持多种密钥类型，过期前自动轮换，安全的密钥存储</p>
+                    <span class="tag tag-security">⭐⭐⭐⭐</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="section section-light" id="ai">
+        <div class="container">
+            <h2>🤖 AI/LLM 集成 (v0.8.0 新增)</h2>
+            <p class="subtitle">统一的 LLM 调用和管理</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>多LLM提供商</h3>
+                    <p>支持 OpenAI、Anthropic Claude、Azure OpenAI、Google Vertex、本地模型</p>
+                    <span class="tag tag-ai">⭐⭐⭐⭐⭐</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
-                    <h3>性能优化</h3>
-                    <p>异步任务执行、Redis 缓存、连接池，高并发场景优化</p>
+                    <h3>LLM 网关</h3>
+                    <p>统一调用入口，负载均衡(轮询/最低延迟/成本优化)，故障转移，响应缓存</p>
+                    <span class="tag tag-ai">⭐⭐⭐⭐</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="section" id="monitor">
+        <div class="container">
+            <h2>� 监控运维 (v0.8.0 新增)</h2>
+            <p class="subtitle">全面的安全监控和告警</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>SIEM 集成</h3>
+                    <p>支持 Splunk/ELK 日志推送，批量发送，格式化输出 (JSON/CEF)</p>
+                    <span class="tag tag-monitor">⭐⭐⭐⭐</span>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🏢</div>
-                    <h3>企业级功能</h3>
-                    <p>JWT 认证、RBAC 权限管理、Web 管理界面</p>
+                    <div class="feature-icon">🔔</div>
+                    <h3>告警升级</h3>
+                    <p>多级告警通知，支持 Email/Slack/PagerDuty/Webhook，自动升级机制</p>
+                    <span class="tag tag-monitor">⭐⭐⭐⭐</span>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔗</div>
-                    <h3>多框架支持</h3>
-                    <p>支持 LangChain、LlamaIndex、AutoGen、CrewAI、Vertex AI</p>
+                    <div class="feature-icon">📊</div>
+                    <h3>安全评分</h3>
+                    <p>系统安全状态评分，A-F 评级，风险趋势分析，安全态势评估</p>
+                    <span class="tag tag-monitor">⭐⭐⭐⭐</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="section section-light" id="config">
+        <div class="container">
+            <h2>⚙️ 配置管理 (v0.8.0 新增)</h2>
+            <p class="subtitle">开箱即用的配置模板</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>配置模板</h3>
+                    <p>8种开箱即用模板：基础/高级/企业/开发/生产/SOC2/GDPR/ISO27001</p>
+                    <span class="tag tag-config">⭐⭐⭐⭐</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📜</div>
+                    <h3>策略即代码</h3>
+                    <p>IaC 方式管理策略，支持条件评估，策略版本管理，导出/导入 JSON</p>
+                    <span class="tag tag-config">⭐⭐⭐⭐</span>
                 </div>
             </div>
         </div>
@@ -325,15 +513,15 @@
                     <p>安全检测模式</p>
                 </div>
                 <div class="stat-item">
+                    <h3>11+</h3>
+                    <p>新增安全模块</p>
+                </div>
+                <div class="stat-item">
                     <h3>5+</h3>
-                    <p>框架适配</p>
+                    <p>LLM 提供商支持</p>
                 </div>
                 <div class="stat-item">
-                    <h3>3</h3>
-                    <p>合规框架支持</p>
-                </div>
-                <div class="stat-item">
-                    <h3>v0.4.0</h3>
+                    <h3>v0.8.0</h3>
                     <p>最新版本</p>
                 </div>
             </div>
@@ -342,30 +530,45 @@
     
     <section class="cta" id="docs">
         <div class="container">
-            <h2>快速开始</h2>
-            <p>仅需几行代码，即可为您的 AI Agent 添加安全保护</p>
-            <pre style="background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 8px; text-align: left; max-width: 600px; margin: 0 auto;"><code># 安装
-pip install git+https://github.com/zdy466/Agent-security-planform.git
+            <h2>🚀 快速开始</h2>
+            <p>仅需几行代码，即可为您的 AI Agent 添加全面的安全保护</p>
+            <div class="code-block">
+<span class="comment"># 安装</span>
+<span class="keyword">pip</span> install git+https://github.com/zdy466/Agent-security-planform.git
 
-# 基础使用
-from agentshield import AgentShieldClient
+<span class="comment"># 基础使用</span>
+<span class="keyword">from</span> agentshield <span class="keyword">import</span> AgentShieldClient
 client = AgentShieldClient()
-result = client.process_input("用户邮箱: test@example.com")
+result = client.process_input(<span class="string">"用户邮箱: test@example.com"</span>)
 
-# 企业级认证
-from agentshield.enterprise import AuthenticationService
-auth = AuthenticationService(secret_key="key")
+<span class="comment"># 数据加密</span>
+<span class="keyword">from</span> agentshield.security <span class="keyword">import</span> DataEncryptor
+encryptor = DataEncryptor({<span class="string">"algorithm"</span>: <span class="string">"fernet"</span>})
+encrypted = encryptor.encrypt({<span class="string">"ssn"</span>: <span class="string">"123-45-6789"</span>})
 
-# 性能优化
-from agentshield.utils import RedisCache, AsyncRunner</code></pre>
+<span class="comment"># IP限流</span>
+<span class="keyword">from</span> agentshield.security <span class="keyword">import</span> RateLimiter
+rate_limiter = RateLimiter({<span class="string">"default_rate"</span>: 100})
+result = rate_limiter.check_rate_limit(<span class="string">"192.168.1.1"</span>)
+
+<span class="comment"># LLM 网关</span>
+<span class="keyword">from</span> agentshield.security <span class="keyword">import</span> LLMGateway
+gateway = LLMGateway({<span class="string">"endpoints"</span>: [...]})
+response = gateway.chat([{<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: <span class="string">"Hello"</span>}])</div>
+            <br>
+            <a href="https://github.com/zdy466/Agent-security-planform" class="btn">查看完整文档</a>
         </div>
     </section>
     
-    <footer id="contact">
+    <footer>
         <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/zdy466/Agent-security-planform">GitHub</a>
+                <a href="#docs">文档</a>
+                <a href="https://github.com/zdy466/Agent-security-planform/issues">问题反馈</a>
+            </div>
             <p>🛡️ AgentShield OS - 守护您的 AI 安全</p>
             <p style="margin-top: 1rem;">
-                <a href="https://github.com/zdy466/Agent-security-planform">GitHub</a> | 
                 <a href="mailto:18335057001@163.com">邮箱</a>
             </p>
             <p style="margin-top: 2rem; font-size: 0.875rem;">
