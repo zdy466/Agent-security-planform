@@ -216,6 +216,176 @@ class SandboxExecutor:
 
 
 class ToolManager:
+    """Tool Manager - Manages and monitors tool execution for LLM agents
+
+    工具管理器，用于注册、验证、执行和管理LLM Agent的工具调用。
+    该类提供完整的工具生命周期管理，包括参数验证、沙盒执行、执行审批和历史记录。
+
+    主要功能:
+        - 工具注册与注销
+        - 参数模式验证与类型检查
+        - 沙盒环境执行（可选）
+        - 执行审批机制
+        - 执行历史记录与审计
+
+    构造函数参数:
+        config (Optional[Dict[str, Any]]): 配置字典，包含以下可选键:
+            - enable_whitelist (bool): 是否启用白名单模式，默认为 True
+            - whitelist (List[str]): 允许执行的工具名称列表
+            - validator (Dict): 参数验证器配置
+                - strict_mode (bool): 是否为严格模式，默认为 True
+            - sandbox (Dict): 沙盒执行器配置
+                - enabled (bool): 是否启用沙盒，默认为 True
+                - timeout (int): 执行超时时间（秒），默认为 30
+                - max_memory_mb (int): 最大内存限制（MB），默认为 256
+                - allowed_paths (List[str]): 允许访问的路径列表
+                - blocked_commands (List[str]): 禁止执行的命令列表
+
+    主要方法:
+        register_tool(
+            name: str,
+            func: Callable,
+            description: str = "",
+            allowed: bool = True,
+            requires_approval: bool = False,
+            parameter_schema: Optional[List[ParameterSchema]] = None,
+            sandboxed: bool = False,
+            timeout: int = 30
+        ):
+            注册一个工具到管理器。
+
+            参数:
+                name (str): 工具名称
+                func (Callable): 工具函数
+                description (str): 工具描述
+                allowed (bool): 是否允许执行，默认为 True
+                requires_approval (bool): 是否需要审批，默认为 False
+                parameter_schema (Optional[List[ParameterSchema]]): 参数模式定义
+                sandboxed (bool): 是否在沙盒中执行，默认为 False
+                timeout (int): 执行超时时间（秒），默认为 30
+
+        unregister_tool(name: str):
+            从管理器中注销一个工具。
+
+            参数:
+                name (str): 工具名称
+
+        get_tool(name: str) -> Optional[ToolDefinition]:
+            获取工具定义对象。
+
+            参数:
+                name (str): 工具名称
+
+            返回:
+                Optional[ToolDefinition]: 工具定义对象，如果不存在则返回 None
+
+        can_execute(tool_name: str) -> bool:
+            检查工具是否可执行。
+
+            参数:
+                tool_name (str): 工具名称
+
+            返回:
+                bool: 如果工具可执行返回 True，否则返回 False
+
+        validate_parameters(tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+            验证工具参数是否符合模式定义。
+
+            参数:
+                tool_name (str): 工具名称
+                params (Dict[str, Any]): 待验证的参数
+
+            返回:
+                Dict[str, Any]: 验证结果，包含:
+                    - valid (bool): 验证是否通过
+                    - errors (List[str]): 错误列表（仅当 valid 为 False 时）
+                    - warnings (List[str]): 警告列表（仅当 valid 为 True 且处于非严格模式）
+
+        execute(tool_name: str, params: Dict[str, Any]) -> Any:
+            执行工具。
+
+            参数:
+                tool_name (str): 工具名称
+                params (Dict[str, Any]): 工具参数
+
+            返回:
+                Any: 工具执行结果
+
+            异常:
+                PermissionError: 工具被禁止执行或需要审批
+                ValueError: 参数验证失败
+                TimeoutError: 执行超时
+
+        approve_tool(tool_name: str, params: Dict[str, Any]) -> Any:
+            审批并执行需要审批的工具。
+
+            参数:
+                tool_name (str): 工具名称
+                params (Dict[str, Any]): 工具参数
+
+            返回:
+                Any: 工具执行结果
+
+        get_history(limit: int = 100) -> List[ToolExecution]:
+            获取工具执行历史记录。
+
+            参数:
+                limit (int): 返回的记录数量限制，默认为 100
+
+            返回:
+                List[ToolExecution]: 执行记录列表
+
+        get_blocked_tools() -> List[str]:
+            获取被禁止执行的工具列表。
+
+            返回:
+                List[str]: 被禁止的工具名称列表
+
+        get_allowed_tools() -> List[str]:
+            获取允许执行的工具列表。
+
+            返回:
+                List[str]: 允许的工具名称列表
+
+    使用示例:
+        >>> # 创建工具管理器
+        >>> manager = ToolManager({
+        ...     "enable_whitelist": True,
+        ...     "whitelist": ["calculator", "search"]
+        ... })
+        >>>
+        >>> # 定义工具函数
+        >>> def calculator(a: int, b: int, operation: str) -> int:
+        ...     if operation == "add":
+        ...         return a + b
+        ...     elif operation == "subtract":
+        ...         return a - b
+        ...     return 0
+        ...
+        >>> # 注册工具
+        >>> manager.register_tool(
+        ...     "calculator",
+        ...     calculator,
+        ...     description="简单计算器",
+        ...     parameter_schema=[
+        ...         ParameterSchema("a", ParameterType.INTEGER, required=True),
+        ...         ParameterSchema("b", ParameterType.INTEGER, required=True),
+        ...         ParameterSchema("operation", ParameterType.STRING, allowed_values=["add", "subtract"])
+        ...     ]
+        ... )
+        >>>
+        >>> # 检查工具是否可执行
+        >>> can_exec = manager.can_execute("calculator")
+        >>> print(f"可执行: {can_exec}")
+        >>>
+        >>> # 执行工具
+        >>> result = manager.execute("calculator", {"a": 10, "b": 5, "operation": "add"})
+        >>> print(f"结果: {result}")
+        >>>
+        >>> # 获取执行历史
+        >>> history = manager.get_history()
+    """
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.logger = logging.getLogger(__name__)

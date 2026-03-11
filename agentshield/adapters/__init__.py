@@ -5,6 +5,10 @@ from agentshield.adapters.framework_adapter import (
     LangChainAdapter,
     AutoGPTAdapter,
     OpenAIFunctionsAdapter,
+    LlamaIndexAdapter,
+    AutoGenAdapter,
+    CrewAIAdapter,
+    VertexAIAgentBuilderAdapter,
     FrameworkAdapterFactory,
 )
 
@@ -13,5 +17,9 @@ __all__ = [
     "LangChainAdapter", 
     "AutoGPTAdapter",
     "OpenAIFunctionsAdapter",
+    "LlamaIndexAdapter",
+    "AutoGenAdapter",
+    "CrewAIAdapter",
+    "VertexAIAgentBuilderAdapter",
     "FrameworkAdapterFactory",
 ]

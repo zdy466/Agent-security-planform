@@ -22,6 +22,11 @@ class ThreatLevel(Enum):
     HIGH = "high"
     CRITICAL = "critical"
 
+    @staticmethod
+    def compare(a, b):
+        order = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+        return order.get(a.value, 0) - order.get(b.value, 0)
+
 
 @dataclass
 class InjectionMatch:
@@ -213,7 +218,7 @@ class PromptInjectionFirewall:
         if not matches:
             return InjectionResult(detected=False, threat_level=ThreatLevel.LOW)
         
-        max_threat = max(m.threat_level for m in matches)
+        max_threat = max([m.threat_level for m in matches], key=lambda x: ThreatLevel.compare(x, ThreatLevel.LOW))
         
         detected = max_threat.value in [h.value for h in ThreatLevel] and \
                    self._threat_gte(max_threat, self.block_threshold)
@@ -330,7 +335,7 @@ class PromptInjectionFirewall:
     def get_attack_statistics(self) -> Dict[str, Any]:
         return {
             "enabled": self.enabled,
-": self.block_threshold            "block_threshold.value,
+            "block_threshold": self.block_threshold.value,
             "whitelist_sources": list(self.whitelist_sources),
             "custom_patterns_count": len(self.custom_patterns)
         }

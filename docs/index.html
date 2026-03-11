@@ -298,6 +298,21 @@
                     <h3>攻击模拟</h3>
                     <p>定期模拟各种攻击，验证安全防护能力，持续优化安全策略</p>
                 </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>性能优化</h3>
+                    <p>异步任务执行、Redis 缓存、连接池，高并发场景优化</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏢</div>
+                    <h3>企业级功能</h3>
+                    <p>JWT 认证、RBAC 权限管理、Web 管理界面</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>多框架支持</h3>
+                    <p>支持 LangChain、LlamaIndex、AutoGen、CrewAI、Vertex AI</p>
+                </div>
             </div>
         </div>
     </section>
@@ -310,16 +325,16 @@
                     <p>安全检测模式</p>
                 </div>
                 <div class="stat-item">
-                    <h3>100%</h3>
-                    <p>开源透明</p>
+                    <h3>5+</h3>
+                    <p>框架适配</p>
                 </div>
                 <div class="stat-item">
                     <h3>3</h3>
                     <p>合规框架支持</p>
                 </div>
                 <div class="stat-item">
-                    <h3>MIT</h3>
-                    <p>开源许可证</p>
+                    <h3>v0.4.0</h3>
+                    <p>最新版本</p>
                 </div>
             </div>
         </div>
@@ -332,12 +347,17 @@
             <pre style="background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 8px; text-align: left; max-width: 600px; margin: 0 auto;"><code># 安装
 pip install git+https://github.com/zdy466/Agent-security-planform.git
 
-# 使用
+# 基础使用
 from agentshield import AgentShieldClient
-
 client = AgentShieldClient()
 result = client.process_input("用户邮箱: test@example.com")
-# {'allowed': False, 'reason': 'sensitive_data_detected'}</code></pre>
+
+# 企业级认证
+from agentshield.enterprise import AuthenticationService
+auth = AuthenticationService(secret_key="key")
+
+# 性能优化
+from agentshield.utils import RedisCache, AsyncRunner</code></pre>
         </div>
     </section>
     

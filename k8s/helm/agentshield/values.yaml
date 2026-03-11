@@ -1,0 +1,118 @@
+replicaCount: 1
+
+image:
+  repository: agentshield/agentshield
+  pullPolicy: IfNotPresent
+  tag: "0.5.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8083"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 8080
+  livenessPort: 8081
+  readinessPort: 8082
+  metricsPort: 8083
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: agentshield.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: agentshield-tls
+      hosts:
+        - agentshield.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+config:
+  firewall:
+    enabled: true
+    blockCritical: true
+    blockHigh: true
+  toolManager:
+    enabled: true
+  dataGateway:
+    enabled: true
+  auditLogger:
+    enabled: true
+    persistToFile: true
+    logFilePath: "/var/log/agentshield/audit.log"
+  monitoring:
+    prometheusEnabled: true
+    healthCheckEnabled: true
+
+persistence:
+  enabled: true
+  storageClass: "gp3"
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  commonLabels:
+    app.kubernetes.io/part-of: agentshield
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          resources:
+            requests:
+              storage: 50Gi

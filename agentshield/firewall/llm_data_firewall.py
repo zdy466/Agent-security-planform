@@ -198,6 +198,116 @@ class EnhancedSensitiveDataDetector:
             "sensitivity": DataSensitivity.HIGH,
             "category": "ATTACK"
         },
+        "jwt_token": {
+            "pattern": r"eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "google_api_key": {
+            "pattern": r"AIza[0-9A-Za-z_-]{35}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "azure_api_key": {
+            "pattern": r"[a-f0-9]{32}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "stripe_key": {
+            "pattern": r"(?:sk|pk)_(?:live|test)_[a-zA-Z0-9]{24,}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "firebase_key": {
+            "pattern": r"AAAA[a-zA-Z0-9_-]{7}:[a-zA-Z0-9_-]{140,}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "sendgrid_api_key": {
+            "pattern": r"SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "twilio_api_key": {
+            "pattern": r"SK[a-f0-9]{32}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "mailchimp_api_key": {
+            "pattern": r"[a-f0-9]{32}-us[0-9]{1,2}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "SECRET"
+        },
+        "social_security_number": {
+            "pattern": r"\b\d{3}-\d{2}-\d{4}\b",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "PII"
+        },
+        "date_of_birth": {
+            "pattern": r"(?:DOB|birth\s*date|出生日期)[:\s]*(?:19|20)\d{2}[-/年](?:0[1-9]|1[0-2])[-/月](?:0[1-9]|[12]\d|3[01])[日]?",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "PII"
+        },
+        "medical_record_number": {
+            "pattern": r"(?i)(MRN|病历号|醫療記錄號)[:\s]*[A-Z0-9]{6,}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "MEDICAL"
+        },
+        "health_insurance_number": {
+            "pattern": r"(?i)(医保|社保|医疗保险)[:\s]*[A-Z0-9]{8,}",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "MEDICAL"
+        },
+        "driver_license": {
+            "pattern": r"[A-Z]{1,2}\d{5,8}",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "PII"
+        },
+        "ipv6_address": {
+            "pattern": r"(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}",
+            "sensitivity": DataSensitivity.LOW,
+            "category": "NETWORK"
+        },
+        "domain_with_port": {
+            "pattern": r"[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}:\d{1,5}",
+            "sensitivity": DataSensitivity.LOW,
+            "category": "NETWORK"
+        },
+        "s3_bucket": {
+            "pattern": r"s3\.amazonaws\.com/[a-z0-9.-]+|[a-z0-9.-]+\.s3\.amazonaws\.com",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "INFRASTRUCTURE"
+        },
+        "database_connection": {
+            "pattern": r"(?i)(mysql|postgres|postgresql|mongodb|redis|sqlserver)://[^\s]+",
+            "sensitivity": DataSensitivity.CRITICAL,
+            "category": "INFRASTRUCTURE"
+        },
+        "path_traversal": {
+            "pattern": r"(?:\.\.[/\\])+[a-zA-Z0-9_./\\-]+",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "ATTACK"
+        },
+        "ldap_injection": {
+            "pattern": r"(?i)(?:\||&|\!|\(|\))(?:\s*(?:\||&|\!|\(|\)))+",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "ATTACK"
+        },
+        "xxe_pattern": {
+            "pattern": r"<\?xml[^>]*\s+system\s+['\"]file:",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "ATTACK"
+        },
+        "deserialization": {
+            "pattern": r"(?i)(pickle\.loads|yaml\.load|eval\(|exec\(|unserialize)",
+            "sensitivity": DataSensitivity.HIGH,
+            "category": "ATTACK"
+        },
+        "hardcoded_ip": {
+            "pattern": r"(?i)(host|server|db|database)\s*[:=]\s*(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+            "sensitivity": DataSensitivity.MEDIUM,
+            "category": "INFRASTRUCTURE"
+        },
     }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -384,6 +494,134 @@ class EnhancedFirewallRule:
 
 
 class EnhancedLLMDataFirewall:
+    """Enhanced LLM Data Firewall with more detection patterns and caching
+
+    增强型LLM数据防火墙，用于检测、过滤和阻止敏感数据在LLM Agent与外部环境之间流动。
+    该类提供多层安全防护，包括敏感数据检测、数据最小化、攻击模式阻断和自定义规则引擎。
+
+    敏感数据检测类别：
+        - PII (个人身份信息): 邮箱、电话号码、身份证号、护照、银行卡等
+        - SECRET (密钥凭证): API密钥、AWS密钥、GitHub Token、私钥等
+        - FINANCIAL (金融信息): 金额、比特币地址等
+        - NETWORK (网络信息): IP地址、MAC地址、URL等
+        - CODE (代码信息): 函数定义、类定义、导入语句等
+        - ATTACK (攻击模式): SQL注入、XSS、命令注入等
+        - INFRASTRUCTURE (基础设施): S3存储桶、数据库连接字符串等
+        - MEDICAL (医疗信息): 病历号、医保号等
+
+    构造函数参数:
+        config (Optional[Dict[str, Any]]): 配置字典，包含以下可选键:
+            - enabled (bool): 是否启用防火墙，默认为 True
+            - enable_data_minimization (bool): 是否启用数据最小化，默认为 False
+            - enable_caching (bool): 是否启用缓存，默认为 True
+            - detector (Dict): 敏感数据检测器配置
+                - enabled_categories (List[str]): 启用的检测类别列表
+                - min_sensitivity (str): 最小敏感级别，可选 "low", "medium", "high", "critical"
+                - custom_patterns (List[Dict]): 自定义检测模式
+            - minimizer (Dict): 数据最小化配置
+                - max_length (int): 最大长度阈值，默认为 1000
+                - summary_length (int): 摘要长度，默认为 200
+                - enable_compression (bool): 是否启用压缩，默认为 True
+            - blocker (Dict): 数据阻断器配置
+                - block_critical (bool): 是否阻断Critical级别，默认为 True
+                - block_high (bool): 是否阻断High级别，默认为 True
+                - block_medium (bool): 是否阻断Medium级别，默认为 False
+                - block_attack_patterns (bool): 是否阻断攻击模式，默认为 True
+                - quarantine_enabled (bool): 是否启用隔离区，默认为 False
+            - rules (List[Dict]): 自定义防火墙规则
+                - name (str): 规则名称
+                - pattern (str): 匹配模式
+                - action (str): 动作，可选 "block", "log"
+                - case_sensitive (bool): 是否区分大小写
+
+    主要方法:
+        check_input(data: str) -> Dict[str, Any]:
+            检查输入数据是否包含敏感信息或攻击模式。
+
+            参数:
+                data (str): 待检查的输入数据
+
+            返回:
+                Dict[str, Any]: 检查结果字典，包含以下键:
+                    - allowed (bool): 是否允许通过
+                    - reason (str): 通过/拒绝原因
+                    - detected_data (List[Dict]): 检测到的敏感数据列表（仅当检测到时）
+                    - block_reason (str): 阻断原因（仅当被阻断时）
+                    - minimized_data (str): 最小化后的数据（仅当启用数据最小化时）
+                    - categories (Dict): 敏感数据类别统计（仅当检测到时）
+
+        check_output(data: str) -> Dict[str, Any]:
+            检查输出数据，功能与 check_input 相同。
+
+            参数:
+                data (str): 待检查的输出数据
+
+            返回:
+                Dict[str, Any]: 与 check_input 相同的返回结构
+
+        sanitize(data: str) -> str:
+            对数据进行脱敏处理，将检测到的敏感数据替换为脱敏标记。
+
+            参数:
+                data (str): 待脱敏的数据
+
+            返回:
+                str: 脱敏后的数据，敏感信息被替换为 [类别名] 格式的标记
+
+        add_rule(name: str, pattern: str, action: str = "block", case_sensitive: bool = False):
+            添加自定义防火墙规则。
+
+            参数:
+                name (str): 规则名称
+                pattern (str): 正则表达式匹配模式
+                action (str): 动作类型，可选 "block" 或 "log"
+                case_sensitive (bool): 是否区分大小写
+
+        get_statistics() -> Dict[str, Any]:
+            获取防火墙统计信息。
+
+            返回:
+                Dict[str, Any]: 统计信息字典，包含:
+                    - total_checks (int): 总检查次数
+                    - blocked_count (int): 被阻断次数
+                    - allowed_count (int): 允许通过次数
+                    - rules_hit (Dict): 各规则命中次数
+                    - cache_enabled (bool): 缓存是否启用
+                    - rules_count (int): 规则数量
+                    - block_rate (str): 阻断率
+
+        reset_statistics():
+            重置所有统计信息。
+
+    使用示例:
+        >>> # 创建防火墙实例
+        >>> firewall = EnhancedLLMDataFirewall({
+        ...     "enabled": True,
+        ...     "blocker": {
+        ...         "block_critical": True,
+        ...         "block_high": True,
+        ...         "block_attack_patterns": True
+        ...     }
+        ... })
+        >>>
+        >>> # 添加自定义规则
+        >>> firewall.add_rule("forbidden_keyword", "password|secret", action="block")
+        >>>
+        >>> # 检查输入数据
+        >>> result = firewall.check_input("用户邮箱: test@example.com")
+        >>> print(result)
+        {'allowed': False, 'reason': 'sensitive_data_detected', 'detected_data': [{'category': 'PII', 'sensitivity': 'medium'}]}
+        >>>
+        >>> # 对数据进行脱敏
+        >>> sanitized = firewall.sanitize("API Key: sk-abc123def456ghi789")
+        >>> print(sanitized)
+        'API Key: [SECRET]'
+        >>>
+        >>> # 获取统计信息
+        >>> stats = firewall.get_statistics()
+        >>> print(f"阻断率: {stats['block_rate']}")
+    """
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
@@ -479,7 +717,7 @@ class EnhancedLLMDataFirewall:
             return data
         
         result = data
-        for match in reversed(sorted(sensitive_matches, key=lambda m: m.position)):
+        for match in reversed(sorted(sensitive_matches, key=lambda m: m.start)):
             replacement = f"[{match.category}]"
             result = result[:match.start] + replacement + result[match.end:]
         

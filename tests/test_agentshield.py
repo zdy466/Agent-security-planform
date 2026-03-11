@@ -8,9 +8,9 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agentshield.firewall.llm_data_firewall import (
-    LLMDataFirewall,
-    SensitiveDataDetector,
-    DataBlocker,
+    EnhancedLLMDataFirewall as LLMDataFirewall,
+    EnhancedSensitiveDataDetector as SensitiveDataDetector,
+    EnhancedDataBlocker as DataBlocker,
     DataSensitivity
 )
 from agentshield.toolguard.tool_manager import (
@@ -29,14 +29,20 @@ from agentshield.audit.audit_logger import AuditLogger
 from agentshield.core.security_layer import SecurityLayer, TrustLevel
 from agentshield.firewall.injection.prompt_injection import PromptInjectionFirewall, ThreatLevel
 from agentshield.monitoring.behavior.behavior_monitor import BehaviorMonitor, BehaviorType
-from agentshield.core.policy.policy_engine import PolicyEngine, PolicyType, PolicyAction
+from agentshield.core.policy.policy_engine import PolicyEngine, PolicyType, PolicyAction, PolicyRule
 from agentshield.security.compliance import ComplianceManager, ComplianceFramework
 from agentshield.security.governance import GovernanceSystem, GovernanceDomain
 
 
 class TestLLMDataFirewall(unittest.TestCase):
     def setUp(self):
-        self.firewall = LLMDataFirewall()
+        self.firewall = LLMDataFirewall({
+            "blocker": {
+                "block_critical": True,
+                "block_high": True,
+                "block_medium": True
+            }
+        })
 
     def test_email_detection(self):
         result = self.firewall.check_input("Contact me at test@example.com")
@@ -130,17 +136,19 @@ class TestToolManager(unittest.TestCase):
         self.assertEqual(tool.name, "doubler")
 
     def test_execute_allowed_tool(self):
-        def add(a, b):
+        from agentshield.toolguard.tool_manager import SandboxExecutor
+        def add(a, b, **kwargs):
             return a + b
 
         self.tool_manager.register_tool("add", add, "Add two numbers")
         self.tool_manager.whitelist.add("add")
-
+        self.tool_manager.sandbox = SandboxExecutor()
+        
         result = self.tool_manager.execute("add", {"a": 1, "b": 2})
         self.assertEqual(result, 3)
 
     def test_block_unregistered_tool(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PermissionError):
             self.tool_manager.execute("unknown_tool", {})
 
     def test_parameter_validation(self):
@@ -202,7 +210,7 @@ class TestDataMasker(unittest.TestCase):
 
     def test_dict_masking(self):
         data = {"email": "test@example.com", "name": "John"}
-        result = self.masker.mask_dict(data)
+        result = self.masker.mask_dict(data, fields_to_mask={"email"})
         self.assertNotIn("test@example.com", str(result))
 
 

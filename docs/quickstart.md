@@ -274,3 +274,182 @@ python -m pytest tests/ -v
 - 阅读 [API 参考](api-reference.md)
 - 查看 [部署指南](deployment.md)
 - 了解 [安全配置](security-config.md)
+
+## 性能优化 (v0.4.0)
+
+### 异步任务执行
+
+```python
+import asyncio
+from agentshield.utils import AsyncRunner
+
+runner = AsyncRunner(max_workers=10)
+
+async def my_async_task():
+    return await some_async_operation()
+
+result = asyncio.run(runner.run_async(my_async_task()))
+```
+
+### Redis 缓存
+
+```python
+import asyncio
+from agentshield.utils import RedisCache
+
+async def use_cache():
+    cache = RedisCache()
+    await cache.connect(host="localhost", port=6379, db=0)
+    
+    # 设置缓存
+    await cache.set("user:123", {"name": "John"}, ttl=300)
+    
+    # 获取缓存
+    data = await cache.get("user:123")
+    
+    # 删除缓存
+    await cache.delete("user:123")
+```
+
+### 连接池
+
+```python
+import asyncio
+from agentshield.utils import ConnectionPool
+
+async def use_pool():
+    pool = ConnectionPool(factory=create_client)
+    
+    async with pool.acquire() as client:
+        result = await client.get("https://api.example.com")
+```
+
+## 企业级功能 (v0.4.0)
+
+### 用户认证
+
+```python
+import asyncio
+from agentshield.enterprise import AuthenticationService, UserRole
+
+async def auth_example():
+    auth = AuthenticationService(secret_key="your-secret-key")
+    
+    # 创建用户
+    user = auth.create_user(
+        username="admin",
+        email="admin@example.com",
+        password="secure_password",
+        role=UserRole.ADMIN
+    )
+    
+    # 登录
+    token = await auth.login("admin", "secure_password")
+    print(f"Access Token: {token.access_token}")
+    
+    # 验证令牌
+    context = await auth.verify_token(token.access_token)
+    print(f"User: {context['username']}, Role: {context['role']}")
+```
+
+### RBAC 权限控制
+
+```python
+from agentshield.enterprise import RBACEngine, Resource, ResourceType, Action
+
+rbac = RBACEngine()
+
+# 添加策略
+policy = PolicyRule(
+    rule_id="rule-001",
+    name="Admin full access",
+    description="Administrators have full access",
+    principal_pattern="role:admin",
+    resource_pattern="*",
+    actions={Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE},
+    effect=True
+)
+rbac.add_policy(policy)
+
+# 检查权限
+resource = Resource(
+    resource_id="doc-001",
+    resource_type=ResourceType.REPORT,
+    owner_id="user-001",
+    name="Q1 Report"
+)
+
+decision = rbac.check_permission(
+    principal_id="admin-user",
+    principal_type="user",
+    action=Action.READ,
+    resource=resource
+)
+print(decision.decision)  # ALLOW or DENY
+```
+
+### Admin Dashboard API
+
+```python
+from agentshield.enterprise import AdminAPIHandler, WebSocketManager
+
+api = AdminAPIHandler()
+
+# 处理 API 请求
+result = await api.handle_request(
+    endpoint="/api/dashboard",
+    method="GET",
+    data={},
+    user_context={"user_id": "admin", "role": "admin"}
+)
+print(result)
+```
+
+## 框架适配器 (v0.4.0)
+
+### LangChain 集成
+
+```python
+from agentshield.adapters import LangChainAdapter
+
+adapter = LangChainAdapter()
+adapter.set_security_components(firewall=firewall, tool_manager=tool_manager)
+
+secure_agent = adapter.wrap_agent(agent)
+secure_llm = adapter.create_secure_llm(llm)
+```
+
+### LlamaIndex 集成
+
+```python
+from agentshield.adapters import LlamaIndexAdapter
+
+adapter = LlamaIndexAdapter()
+adapter.set_security_components(firewall=firewall)
+
+secure_index = adapter.wrap_index(index)
+secure_query_engine = adapter.create_secure_query_engine(query_engine)
+```
+
+### AutoGen 集成
+
+```python
+from agentshield.adapters import AutoGenAdapter
+
+adapter = AutoGenAdapter()
+adapter.set_security_components(firewall=firewall, tool_manager=tool_manager)
+
+secure_agent = adapter.wrap_agent(agent)
+```
+
+### CrewAI 集成
+
+```python
+from agentshield.adapters import CrewAIAdapter
+
+adapter = CrewAIAdapter()
+adapter.set_security_components(firewall=firewall, tool_manager=tool_manager)
+
+secure_agent = adapter.wrap_agent(agent)
+secure_tool = adapter.wrap_tool(tool)
+```
